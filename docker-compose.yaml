@@ -1,0 +1,41 @@
+services:   
+  datadog-simple-dotnet:
+    image: "gcr.io/datadoghq/agent:7.63.2"
+    container_name: datadog-simple-dotnet
+    env_file:
+      - ~/sandbox.docker.env
+    environment:
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_LOGS_ENABLED=true
+      - DD_LOG_LEVEL=INFO
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+      - DD_CONTAINER_EXCLUDE="name:datadog-simple-dotnet"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+
+  simple-dotnet:
+    build: 
+      context: .
+      args:
+        VERSION: 3.11.1
+        ARCH: arm64
+    ports:
+      - '8080:5555'
+    container_name: simple-dotnet
+    environment:
+      - DD_AGENT_HOST=datadog-simple-dotnet
+      - DD_TRACE_AGENT_PORT=8126
+      - DD_TRACE_DEBUG=true
+      - DD_SERVICE=simple-dotnet
+      - DD_ENV=dotnet
+      - DD_VERSION=2.1.1
+      - DD_LOGS_INJECTION=true
+    depends_on:
+      - datadog-simple-dotnet
+    labels:
+      com.datadoghq.tags.service: 'simple-dotnet'
+      com.datadoghq.tags.version: '2.1.1'
+      com.datadoghq.tags.env: 'dotnet'
